@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sai Banner Studio</title>
+    
+    <!-- 1. GOOGLE FONTS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Hind:wght@500;600;700&family=Noto+Sans+Devanagari:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- 2. FIREBASE SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <!-- 3. AWS SDK -->
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.283.1.min.js"></script>
+
+    <style>
+        /* --- General Styles --- */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Noto Sans Devanagari', 'Hind', sans-serif; background-color: #f0f0f0; margin: 0; padding: 0; display: flex; justify-content: center; height: 100vh; width: 100vw; overscroll-behavior: none; user-select: none; }
+        .mobile-container { width: 100%; max-width: 100%; height: 100%; background-color: #fff; position: relative; display: flex; flex-direction: column; overflow: hidden; }
+        .hidden { display: none !important; }
+        .page-layout { display: flex; flex-direction: column; height: 100%; width: 100%; }
+        .content-scroll { flex: 1; overflow-y: auto; padding-bottom: 80px; -webkit-overflow-scrolling: touch; }
+        
+        /* --- THEME: ORANGE --- */
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin-top: 10px; font-weight: bold; transition: 0.3s; }
+        .btn-primary { background: #e65100; color: white; }
+        .btn-premium { background: #a04000; color: white; margin-bottom: 10px; }
+        .btn-danger { background: #c0392b; color: white; }
+        .btn-small { padding: 5px 10px; font-size: 12px; width: auto; margin: 0; }
+
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px; }
+        .input-group input, .input-group select, .input-group textarea { width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9; font-size: 16px; font-family: 'Noto Sans Devanagari', sans-serif; }
+        
+        .app-header { background: #e65100; color: white; padding: 15px; text-align: center; font-size: 20px; font-weight: bold; flex-shrink: 0; position: relative; display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .user-logout-btn { position: absolute; right: 15px; background: rgba(255, 255, 255, 0.2); border: 1px solid white; padding: 5px 10px; border-radius: 5px; font-size: 12px; cursor: pointer; }
+        
+        /* Admin */
+        .admin-content { padding: 20px; text-align: center; }
+        .admin-btn-solid { background: #e65100; color: white; border: none; padding: 15px; width: 100%; border-radius: 25px; font-size: 18px; font-weight: bold; margin-bottom: 15px; box-shadow: 0 3px 6px rgba(0,0,0,0.2); }
+        .admin-btn-outline { background: white; color: #8d4e00; border: 2px solid #8d4e00; padding: 12px; width: 100%; border-radius: 15px; font-size: 18px; font-weight: bold; margin-bottom: 15px; display: flex; flex-direction: column; align-items: center; cursor: pointer; }
+        .admin-icon { font-size: 22px; margin-bottom: 5px; }
+        
+        .admin-list-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; background: #fff; }
+        .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #e65100; }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        .big-option-btn { background: linear-gradient(to right, #e65100, #ff9800); color: white; margin: 20px 15px; padding: 15px 20px; border-radius: 12px; font-size: 20px; font-weight: bold; text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; }
+        .services-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px; }
+        .service-card { background: white; padding: 15px; text-align: center; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-size: 14px; cursor: pointer; transition: transform 0.1s; }
+        .service-card:active { transform: scale(0.98); }
+        .service-icon { font-size: 50px; margin-bottom: 8px; height: 90px; display: flex; align-items: center; justify-content: center; }
+        .service-icon img { width: 80px; height: 80px; object-fit: contain; }
+        
+        /* Banners */
+        #banner-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; }
+        .banner-card { width: 100%; background: #fff; border-radius: 10px; overflow: hidden; border: 1px solid #ccc; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 0; }
+        .banner-header { background: #eee; padding: 5px; font-size: 11px; font-weight: bold; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
+        .banner-card img { width: 100%; height: 110px; object-fit: cover; display: block; }
+        .dwn-text { text-align: center; font-size: 10px; padding: 5px; color: #e65100; font-weight: bold; background: #fff; cursor: pointer;}
+        
+        /* Footer */
+        .bottom-nav { height: 60px; background: white; border-top: 1px solid #ddd; display: flex; justify-content: space-around; align-items: center; width: 100%; position: absolute; bottom: 0; left: 0; z-index: 100; }
+        .admin-nav-bg { background: #e65100; color: white; }
+        .nav-item { text-align: center; font-size: 12px; cursor: pointer; flex: 1; }
+        .nav-item.active { color: #e67e22; font-weight: bold; }
+        .admin-nav-bg .nav-item { color: white; }
+        
+        #login-page { padding: 40px 20px; text-align: center; display: flex; flex-direction: column; justify-content: center; height: 100%; }
+        .logo-box { width: 80px; height: 80px; background: #e67e22; color: white; font-size: 40px; font-weight: bold; line-height: 80px; border-radius: 15px; margin: 0 auto 30px; }
+        
+        .scheme-form-card { border: 2px solid #e65100; border-radius: 10px; padding: 15px; margin-bottom: 15px; text-align: left; background: #fff; }
+        .upload-box-dashed { border: 2px dashed #888; border-radius: 10px; padding: 30px; text-align: center; margin: 10px 0; background: #fafafa; }
+        .plus-icon { font-size: 40px; color: #555; display: block; }
+        .profile-content { padding: 20px; text-align: center; }
+        
+        /* LOCKED LOGO STYLES */
+        .logo-upload-box { 
+            width: 100px; height: 100px; 
+            background: #ddd; 
+            border-radius: 50%; 
+            margin: 10px auto; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 40px; color: white; 
+            overflow: hidden; 
+            border: 3px solid #e65100; 
+            position: relative;
+        }
+        .logo-upload-box img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .locked-logo { cursor: default; opacity: 0.9; }
+        .locked-logo::after {
+            content: "🔒";
+            position: absolute; bottom: 5px; right: 5px;
+            font-size: 16px; text-shadow: 0 0 3px black;
+        }
+
+        .search-bar-container { padding: 15px; background: #fff; border-bottom: 1px solid #ddd; }
+        .search-input { width: 100%; padding: 10px 15px; border: 1px solid #e65100; border-radius: 25px; font-size: 14px; outline: none; }
+        .user-list-card { background: #fff; border: 1px solid #e65100; border-radius: 10px; padding: 10px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .user-info-left { display: flex; align-items: center; gap: 10px; flex: 1; }
+        .user-avatar-small { width: 50px; height: 50px; border-radius: 50%; background: #ccc; overflow: hidden; border: 2px solid #333; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #fff; }
+        .user-avatar-small img { width: 100%; height: 100%; object-fit: cover; }
+        .user-details h4 { margin: 0; font-size: 16px; color: #000; }
+        .user-details p { margin: 2px 0 0; font-size: 12px; color: #555; }
+        .user-actions { display: flex; gap: 15px; }
+        .action-icon { font-size: 20px; cursor: pointer; }
+
+        /* PREVIEW MODAL */
+        #preview-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 2000; display: flex; justify-content: center; align-items: center;
+            background: rgba(0,0,0,0.85);
+        }
+        .preview-card {
+            width: 95%; max-width: 400px; background: #fff; border-radius: 8px; overflow: hidden;
+            display: flex; flex-direction: column; max-height: 90vh;
+        }
+        .preview-header {
+            padding: 10px 15px; background: #022047; color: #fff; display:flex; justify-content:space-between; align-items:center;
+            font-weight: 500; font-size: 14px; flex-shrink: 0;
+        }
+        .close-btn { background: none; border: none; font-size: 20px; color: white; cursor: pointer; }
+        .preview-body { overflow-y: auto; background: #ddd; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        
+        .preview-content-box { width: 100%; background: #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .prev-banner-img { width: 100%; display: block; }
+        
+        /* --- FOOTER PREVIEW (IMAGE ONLY) --- */
+        .footer-preview-img-container {
+            width: 100%;
+            height: auto;
+            background: #fff;
+            border-top: 1px solid #ccc;
+        }
+        .footer-preview-img {
+            width: 100%;
+            height: auto;
+            display: block;
+            object-fit: contain;
+        }
+        
+        .preview-actions { padding: 12px; background: #fff; border-top: 1px solid #eee; text-align: center; }
+        #downloadCanvas { display: none; }
+        
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed; top:0; left:0; width:100%; height:100%;
+            background: rgba(255,255,255,0.8); z-index: 3000;
+            display: flex; justify-content: center; align-items: center;
+            flex-direction: column;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3; border-top: 4px solid #e65100;
+            border-radius: 50%; width: 40px; height: 40px;
+            animation: spin 1s linear infinite; margin-bottom: 10px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<!-- LOADING SPINNER -->
+<div id="loading-overlay" class="loading-overlay hidden">
+    <div class="spinner"></div>
+    <div style="font-weight:bold; color:#e65100;">Please wait... Processing</div>
+</div>
+
+<!-- PREVIEW MODAL -->
+<div id="preview-modal" class="hidden">
+    <div class="preview-overlay" onclick="closePreview()"></div>
+    <div class="preview-card">
+        <div class="preview-header">
+            <span>Download Preview</span>
+            <button class="close-btn" onclick="closePreview()">×</button>
+        </div>
+        <div class="preview-body">
+            <div class="preview-content-box" id="capture-node">
+                <!-- Banner Image -->
+                <img id="prev-banner-img" class="prev-banner-img" src="" crossorigin="anonymous" />
+                
+                <!-- Footer Image Only (Replaces Text) -->
+                <div class="footer-preview-img-container">
+                    <img id="prev-footer-img" class="footer-preview-img" src="" alt="Footer Image" crossorigin="anonymous" />
+                </div>
+            </div>
+        </div>
+        <div class="preview-actions">
+            <button class="btn btn-primary" id="confirm-download-btn">Download Image 📥</button>
+        </div>
+    </div>
+</div>
+
+<div class="mobile-container">
+    <!-- 1. LOGIN PAGE -->
+    <div id="login-page">
+        <div class="logo-box">S</div>
+        <h2>Sai Banner Studio</h2>
+        <div class="input-group"><label>ईमेल आयडी</label><input type="email" id="login-email" placeholder="Email ID" /></div>
+        <div class="input-group"><label>पासवर्ड</label><input type="password" id="login-pass" placeholder="Password" /></div>
+        <button id="login-btn" class="btn btn-primary" onclick="handleLogin()">लॉगिन करा</button>
+        <p style="margin-top:15px; font-size:12px; color:red;">फक्त नोंदणीकृत युजर्ससाठी.</p>
+    </div>
+
+    <!-- 2. NEW USER SETUP -->
+    <div id="new-user-setup-page" class="hidden">
+        <h3 style="color:#e65100;">माहिती भरा</h3>
+        <p style="font-size:12px; color:#555;">तुम्ही प्रथमच लॉगिन करत आहात.</p>
+        <div class="logo-upload-box locked-logo" onclick="document.getElementById('setup-logo-input').click()">
+            <span id="setup-logo-placeholder">👤</span>
+            <img id="setup-logo-preview" style="display:none;">
+        </div>
+        <div style="font-weight:bold; margin-bottom:5px; text-align:center;">केंद्राचा लोगो</div>
+        <p style="text-align:center; font-size:10px; color:red; margin-bottom:20px;">(लोगो फक्त ॲडमिनद्वारे सेट केला जाईल)</p>
+        
+        <input type="file" id="setup-logo-input" accept="image/*" style="display:none;">
+
+        <div class="input-group"><label>पूर्ण नाव</label><input type="text" id="setup-fullname"></div>
+        <div class="input-group"><label>केंद्राचे नाव</label><input type="text" id="setup-centername"></div>
+        <div class="input-group"><label>संपूर्ण पत्ता</label><input type="text" id="setup-address"></div>
+        <div class="input-group"><label>मोबाईल क्रमांक</label><input type="number" id="setup-mobile"></div>
+        <button class="btn btn-primary" onclick="saveNewUserProfile()">सेव्ह करा</button>
+    </div>
+
+    <!-- 3. ADMIN PANEL -->
+    <div id="admin-panel" class="hidden page-layout">
+        <div class="app-header">Edit Options <div class="user-logout-btn" onclick="doLogout()">बाहेर</div></div>
+        <div class="content-scroll admin-content">
+            <button class="admin-btn-solid">➕ नवीन सेवा ऍड करा</button>
+            <button class="admin-btn-outline" onclick="openServiceEditNamePage()"><span class="admin-icon">✏️</span> आमच्या सेवा नेम Edit</button>
+            <button class="admin-btn-outline" onclick="openLogoEditPage()"><span class="admin-icon">🖼️</span> लोगो एडिट</button>
+            <button class="admin-btn-outline" onclick="openAddSchemePage()"><span class="admin-icon">📅</span> नवीन योजना बॅनर</button>
+            <button class="admin-btn-outline" onclick="openServiceActivePage()"><span class="admin-icon">⭕</span> सर्विस ऍक्टिव्ह एन</button>
+            <button class="admin-btn-outline" onclick="openServiceReorderPage()"><span class="admin-icon">⬇️</span> सर्विस क्रम नुसार</button>
+            <button class="admin-btn-outline" onclick="openAddSchemePage()"><span class="admin-icon">📑</span> आत्ताच्या योजना ऍड</button>
+        </div>
+        <div class="bottom-nav admin-nav-bg"><div class="nav-item">Edit</div><div class="nav-item" onclick="openAdminUserList()">युजर</div><div class="nav-item" onclick="openAdminFestivalPage()">सण</div><div class="nav-item">बँक Csp</div></div>
+    </div>
+
+    <!-- ADMIN SUB-PAGES -->
+    <div id="admin-edit-name-page" class="hidden page-layout"><div class="app-header">सेवा नेम Edit</div><div class="content-scroll" id="admin-name-list"></div><div class="bottom-nav admin-nav-bg"><div class="nav-item" onclick="showPage('admin-panel')">Back</div></div></div>
+    <div id="admin-active-page" class="hidden page-layout"><div class="app-header">सर्विस ऍक्टिव्ह एन</div><div class="content-scroll" id="admin-active-list"></div><div class="bottom-nav admin-nav-bg"><div class="nav-item" onclick="showPage('admin-panel')">Back</div></div></div>
+    <div id="admin-reorder-page" class="hidden page-layout"><div class="app-header">सर्विस क्रम नुसार</div><div class="content-scroll" id="admin-reorder-list"></div><div class="bottom-nav admin-nav-bg"><div class="nav-item" onclick="showPage('admin-panel')">Back</div></div></div>
+    <div id="admin-user-list-page" class="hidden page-layout"><div class="app-header">युजर ची यादी</div><div class="search-bar-container"><input type="text" id="user-search-input" class="search-input" placeholder="🔍 शोधा..." onkeyup="filterUsers()" /></div><div class="content-scroll user-list-container" id="admin-users-container"><p style="text-align:center;">Loading...</p></div><div class="bottom-nav admin-nav-bg"><div class="nav-item" onclick="showPage('admin-panel')">Edit</div><div class="nav-item" style="font-weight:bold;">युजर</div><div class="nav-item" onclick="openAdminFestivalPage()">सण</div><div class="nav-item">बँक Csp</div></div></div>
+    
+    <!-- ADMIN EDIT USER PAGE -->
+    <div id="admin-edit-user-page" class="hidden page-layout">
+        <div class="app-header">युजर एडिट करा</div>
+        <div class="content-scroll" style="padding:20px;">
+            <input type="hidden" id="admin-edit-uid" />
+            <div class="logo-upload-box"><img id="admin-edit-user-preview" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;" /></div>
+            <p style="text-align:center; font-size:12px; color:#555;">(लोगो फक्त युजर बदलू शकतो)</p>
+            <div class="input-group"><label>पूर्ण नाव</label><input type="text" id="admin-edit-fullname"></div>
+            <div class="input-group"><label>केंद्राचे नाव</label><input type="text" id="admin-edit-centername"></div>
+            <div class="input-group"><label>संपूर्ण पत्ता</label><input type="text" id="admin-edit-address"></div>
+            <div class="input-group"><label>मोबाईल क्रमांक</label><input type="number" id="admin-edit-mobile"></div>
+            
+            <div class="input-group">
+                <label>Logo Image URL (Cloudinary)</label>
+                <input type="text" id="admin-edit-logo-url" placeholder="Paste Cloudinary/Image URL" />
+            </div>
+
+            <button class="btn btn-primary" onclick="saveUserByAdmin()">अपडेट करा</button>
+            <button class="btn btn-danger" onclick="openAdminUserList()">रद्द करा</button>
+        </div>
+    </div>
+    
+    <!-- ADMIN QUICK LOGO UPDATE PAGE -->
+    <div id="admin-quick-logo-page" class="hidden page-layout">
+        <div class="app-header">फुटर इमेज अपडेट</div>
+        <div class="content-scroll" style="padding:20px;">
+            <input type="hidden" id="quick-logo-uid" />
+            <div class="input-group">
+                <label>पूर्ण फुटर इमेज लिंक (Cloudinary URL)</label>
+                <input type="text" id="quick-logo-url" placeholder="https://res.cloudinary.com/..." />
+                <p style="font-size:12px; color:#555; margin-top:5px;">येथे जी इमेज लिंक टाकाल, तीच इमेज बॅनरच्या खाली दिसेल.</p>
+            </div>
+            <button class="btn btn-primary" onclick="saveQuickLogo()">सेव्ह करा (Save Footer)</button>
+            <button class="btn btn-danger" onclick="openAdminUserList()">मागे जा (Back)</button>
+        </div>
+    </div>
+    
+    <div id="admin-festival-page" class="hidden page-layout">
+        <div class="app-header">सण ॲड करा</div>
+        <div class="content-scroll" style="padding: 10px;">
+            <div class="scheme-form-card"><div class="input-group"><label>सण चे नाव टाका</label><input type="text" id="fest-name" /></div></div>
+            <div class="scheme-form-card"><label>बॅनर अपलोड (AWS Link)</label><div class="input-group"><input type="text" id="fest-s3-url" placeholder="Paste AWS S3 URL Here" /></div><p style="text-align:center; font-size:12px;">किंवा फाईल (Optional)</p><div class="upload-box-dashed" onclick="document.getElementById('fest-file').click()"><span class="plus-icon">➕</span></div><input type="file" id="fest-file" accept="image/*" style="display: none;" onchange="previewFile('fest-file', 'fest-file-name')" /><p id="fest-file-name" style="text-align:center; color:green; font-size:12px;"></p></div>
+            <div class="scheme-form-card"><div class="input-group"><label>डिस्क्रिप्शन</label><textarea rows="3" id="fest-desc"></textarea></div></div>
+            <button class="btn btn-primary" id="save-fest-btn" onclick="saveFestival()">सेव्ह करा</button>
+        </div>
+        <div class="bottom-nav admin-nav-bg"><div class="nav-item" onclick="showPage('admin-panel')">Edit</div><div class="nav-item" onclick="openAdminUserList()">युजर</div><div class="nav-item" style="font-weight:bold;">सण</div><div class="nav-item">बँक Csp</div></div>
+    </div>
+
+    <div id="admin-add-scheme-page" class="hidden page-layout">
+        <div class="app-header">आत्ताच्या योजना ऍड</div>
+        <div class="content-scroll" style="padding: 10px;">
+            <div class="scheme-form-card"><div class="input-group"><label>योजना निवडा</label><select id="scheme-select-dropdown"><option value="General">General (नवीन योजना)</option></select></div></div>
+            <div class="scheme-form-card"><label>बॅनर अपलोड (AWS Link)</label><div class="input-group"><input type="text" id="scheme-s3-url" placeholder="Paste AWS S3 URL Here" /></div><p style="text-align:center; margin:5px; font-size:12px;">किंवा फाईल (Optional)</p><div class="upload-box-dashed" onclick="document.getElementById('new-scheme-file').click()"><span class="plus-icon">➕</span></div><input type="file" id="new-scheme-file" accept="image/*" style="display: none;" onchange="previewFile('new-scheme-file', 'file-name')" /><p id="file-name" style="text-align:center; color:green; font-size:12px;"></p></div>
+            <div class="scheme-form-card"><div class="input-group"><label>डिस्क्रिप्शन</label><textarea rows="3" id="scheme-desc"></textarea></div></div>
+            <button class="btn btn-primary" id="save-scheme-btn" onclick="saveCategorizedBanner()">सेव्ह करा</button><button class="btn btn-primary" style="background:#888; margin-top:5px;" onclick="window.showPage('admin-panel')">मागे</button>
+        </div>
+    </div>
+
+    <div id="admin-logo-edit-page" class="hidden page-layout">
+        <div class="app-header">लोगो एडिट</div>
+        <div class="content-scroll" style="padding: 10px;">
+            <div class="scheme-form-card"><div class="input-group"><label>सेवेचे नाव निवडा</label><select id="logo-service-dropdown"></select></div></div>
+            <div class="scheme-form-card"><label>लोगो अपलोड (AWS Link)</label><div class="input-group"><input type="text" id="logo-s3-url" placeholder="Paste AWS S3 URL Here" /></div><p style="text-align:center; margin:5px; font-size:12px;">किंवा फाईल (Optional)</p><div class="upload-box-dashed" onclick="document.getElementById('new-logo-file').click()"><span class="plus-icon">➕</span></div><input type="file" id="new-logo-file" accept="image/*" style="display: none;" onchange="previewFile('new-logo-file', 'logo-file-name')" /><p id="logo-file-name" style="text-align:center; color:green; font-size:12px;"></p></div>
+            <button class="btn btn-primary" id="save-logo-btn" onclick="saveServiceLogo()">सेव्ह करा</button><button class="btn btn-primary" style="background:#888; margin-top:5px;" onclick="window.showPage('admin-panel')">मागे</button>
+        </div>
+    </div>
+
+    <!-- 6. USER HOME PAGE -->
+    <div id="home-page" class="hidden page-layout">
+        <div class="app-header">Sai Banner Studio <div class="user-logout-btn" onclick="doLogout()">↪ बाहेर</div></div>
+        <div class="content-scroll">
+            <div class="big-option-btn" onclick="openSchemeGallery('General')"><span>📣 आत्ताच्या नवीन योजना</span><span>▶</span></div>
+            <div style="background: linear-gradient(to right, #e67e22, #f39c12); color: white; margin: 15px; padding: 8px; text-align: center; font-weight: bold; border-radius: 50px;">आमच्या सर्व सेवा</div>
+            <div class="services-grid" id="user-services-grid"></div>
+        </div>
+        <div class="bottom-nav"><div class="nav-item active" onclick="showPage('home-page')">🏠<br />होम</div><div class="nav-item" onclick="openUserFestivalPage()">🎉<br />सन</div><div class="nav-item">🏦<br />बँक CSP</div><div class="nav-item" onclick="showPage('profile-page')">👤<br />User</div></div>
+    </div>
+
+    <!-- 7. USER SCHEME DISPLAY -->
+    <div id="schemes-display-page" class="hidden page-layout">
+        <div class="app-header">Sai Banner Studio</div>
+        <div class="content-scroll">
+            <div class="big-option-btn" style="cursor: default;"><span id="gallery-title">योजना</span><span>▼</span></div>
+            <div id="banner-container"></div>
+            <button class="btn btn-premium" onclick="showPage('home-page')" style="width:90%; margin:10px auto; display:block;">मागे जा (Back)</button>
+        </div>
+        <div class="bottom-nav"><div class="nav-item active" onclick="showPage('home-page')">🏠<br />होम</div><div class="nav-item" onclick="openUserFestivalPage()">🎉<br />सन</div><div class="nav-item">🏦<br />बँक CSP</div><div class="nav-item" onclick="showPage('profile-page')">👤<br />User</div></div>
+    </div>
+
+    <!-- 7.1 USER FESTIVAL PAGE -->
+    <div id="user-festival-page" class="hidden page-layout">
+        <div class="app-header">सन (Festivals)</div>
+        <div class="content-scroll">
+            <div id="festival-container" style="padding: 15px;"></div>
+        </div>
+        <div class="bottom-nav"><div class="nav-item" onclick="showPage('home-page')">🏠<br />होम</div><div class="nav-item active">🎉<br />सन</div><div class="nav-item">🏦<br />बँक CSP</div><div class="nav-item" onclick="showPage('profile-page')">👤<br />User</div></div>
+    </div>
+
+    <!-- 8. USER PROFILE (User Tab) -->
+    <div id="profile-page" class="hidden page-layout">
+        <div class="app-header">Sai Banner Studio</div>
+        <div class="content-scroll">
+            <div style="background:#e65100; color:white; padding:8px 25px; border-radius:20px; margin:10px auto; width:fit-content; font-weight:bold;">माझे प्रोफाइल (My Profile)</div>
+            <div class="profile-content">
+                <!-- LOCKED LOGO -->
+                <div class="logo-upload-box locked-logo">
+                    <span id="edit-logo-placeholder">📷</span>
+                    <img id="edit-logo-preview" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;">
+                </div>
+                <div style="text-align:center; font-weight:bold;">केंद्राचा लोगो</div>
+                <p style="text-align:center; font-size:10px; color:red; margin-bottom:15px;">(लोगो ॲडमिनद्वारे मॅनेज केला जातो)</p>
+
+                <div class="input-group"><label>स्वत:चे नाव</label><input type="text" id="edit-fullname"></div>
+                <div class="input-group"><label>केंद्राचे नाव</label><input type="text" id="edit-centername"></div>
+                <div class="input-group"><label>संपूर्ण पत्ता</label><input type="text" id="edit-address"></div>
+                <div class="input-group"><label>मोबाईल क्रमांक</label><input type="number" id="edit-mobile"></div>
+                
+                <button class="btn btn-premium">प्रीमियम घ्या (Get Premium)</button>
+                <button class="btn btn-primary" onclick="updateProfile()">सेव्ह करा</button>
+            </div>
+        </div>
+        <div class="bottom-nav">
+            <div class="nav-item" onclick="showPage('home-page')">🏠<br />होम</div>
+            <div class="nav-item" onclick="openUserFestivalPage()">🎉<br />सन</div>
+            <div class="nav-item">🏦<br />बँक CSP</div>
+            <div class="nav-item active">👤<br />User</div>
+        </div>
+    </div>
+
+</div>
+
+<canvas id="downloadCanvas"></canvas>
+
+<!-- LOGIC -->
+<script>
+    // AWS Configuration
+    AWS.config.update({
+        accessKeyId: 'YOUR_AWS_ACCESS_KEY', 
+        secretAccessKey: 'YOUR_AWS_SECRET_KEY', 
+        region: 'eu-north-1' 
+    });
+    const s3 = new AWS.S3();
+
+    // Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyCPdqpgK2tZD5fEDs1l2KeU-2SVV26X4Z4",
+      authDomain: "apps-sai.firebaseapp.com",
+      projectId: "apps-sai",
+      storageBucket: "apps-sai.firebasestorage.app",
+      messagingSenderId: "297977625670",
+      appId: "1:297977625670:web:d525df581c2c327a13de47"
+    };
+
+    // Initialize
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const ADMIN_EMAIL = "s61954668@gmail.com";
+
+    // Data
+    const defaultServices = [
+        { id: 1, name: "आधार कार्ड", icon: "🔒", active: true }, 
+        { id: 2, name: "पॅन कार्ड", icon: "🆔", active: true }, 
+        { id: 3, name: "महा DBT", icon: "💰", active: true },
+        { id: 4, name: "आयुष्मान कार्ड", icon: "🏥", active: true }, 
+        { id: 5, name: "मतदान कार्ड", icon: "🗳️", active: true }, 
+        { id: 6, name: "PM किसान", icon: "🌾", active: true }, 
+        { id: 7, name: "रेशन कार्ड", icon: "📋", active: true }, 
+        { id: 8, name: "महा वितरण", icon: "⚡", active: true }, 
+        { id: 9, name: "७/१२ उतारा ८अ", icon: "📄", active: true }, 
+        { id: 10, name: "सौर पंप योजना", icon: "☀️", active: true }, 
+        { id: 11, name: "ई श्रम कार्ड", icon: "👷", active: true }, 
+        { id: 12, name: "झेरॉक्स लॅमिनेशन", icon: "🖨️", active: true }, 
+        { id: 13, name: "CSC", icon: "💻", active: true }, 
+        { id: 14, name: "इ सेवा केंद्र", icon: "🏢", active: true }, 
+        { id: 15, name: "ड्रायव्हिंग लायसन्स", icon: "🚗", active: true }, 
+        { id: 16, name: "इतर सर्व कागद पात्र", icon: "📂", active: true }
+    ];
+
+    let services = JSON.parse(localStorage.getItem('app_services_v2')) || defaultServices;
+    let savedBanners = JSON.parse(localStorage.getItem('app_banners_final')) || [];
+    let savedFestivals = JSON.parse(localStorage.getItem('app_festivals')) || [];
+    let userProfile = {};
+    let allUsersData = [];
+
+    // --- NAVIGATION ---
+    window.showPage = function(pageId) {
+        document.querySelectorAll('.mobile-container > div').forEach(div => div.classList.add('hidden'));
+        document.getElementById(pageId).classList.remove('hidden');
+        if(pageId === 'profile-page') populateEditProfile();
+        if(pageId === 'home-page') renderServicesGrid();
+    }
+
+    // --- LOGIN LOGIC ---
+    window.handleLogin = function() {
+        const email = document.getElementById('login-email').value;
+        const pass = document.getElementById('login-pass').value;
+        const btn = document.getElementById('login-btn');
+
+        if(!email || !pass) { alert("कृपया ईमेल आणि पासवर्ड दोन्ही टाका."); return; }
+
+        if(email === ADMIN_EMAIL && pass === "9850") {
+            showPage('admin-panel');
+            return;
+        }
+
+        btn.innerText = "कृपया थांबा...";
+        btn.disabled = true;
+
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+        .then(() => {
+            return auth.signInWithEmailAndPassword(email, pass);
+        })
+        .catch((error) => {
+            btn.innerText = "लॉगिन करा";
+            btn.disabled = false;
+            alert(error.message);
+        });
+    }
+
+    // Auth Listener
+    auth.onAuthStateChanged((user) => {
+        const btn = document.getElementById('login-btn');
+        if(btn) { btn.innerText = "लॉगिन करा"; btn.disabled = false; }
+
+        if (user) {
+            if(user.email === ADMIN_EMAIL) {
+                showPage('admin-panel');
+            } else {
+                db.collection('users').doc(user.uid).get().then((doc) => {
+                    if (doc.exists) {
+                        userProfile = doc.data();
+                        showPage('home-page');
+                    } else {
+                        showPage('new-user-setup-page');
+                    }
+                }).catch((e) => {
+                    console.log("Error checking profile:", e);
+                    showPage('new-user-setup-page');
+                });
+            }
+        } else {
+            showPage('login-page');
+        }
+    });
+
+    window.doLogout = function() {
+        if(confirm("बाहेर पडायचे आहे का?")) {
+            auth.signOut().then(() => {
+                document.getElementById('login-email').value = "";
+                document.getElementById('login-pass').value = "";
+                showPage('login-page');
+            });
+        }
+    }
+
+    // --- S3 UPLOAD HELPER ---
+    function uploadToS3(file, callback) {
+        if (!file) { callback(null); return; }
+        
+        const params = {
+            Bucket: 'sbanner-2025',
+            Key: Date.now() + "_" + file.name,
+            Body: file,
+            ACL: 'public-read',
+            ContentType: file.type
+        };
+
+        if(!AWS.config.credentials) {
+             const r = new FileReader();
+             r.onload = (e) => callback(e.target.result); // Fallback to Base64
+             r.readAsDataURL(file);
+             return;
+        }
+
+        s3.upload(params, function(err, data) {
+            if (err) {
+                const r = new FileReader();
+                r.onload = (e) => callback(e.target.result); 
+                r.readAsDataURL(file);
+            } else {
+                callback(data.Location);
+            }
+        });
+    }
+
+    // --- COMPRESS IMAGE ---
+    function compressImage(file, quality, callback) {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function(event) {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const maxWidth = 500; 
+                const scaleSize = maxWidth / img.width;
+                canvas.width = maxWidth;
+                canvas.height = img.height * scaleSize;
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                callback(canvas.toDataURL('image/jpeg', quality)); 
+            }
+        }
+    }
+
+    // --- NEW USER SETUP ---
+    window.previewSetupLogo = function() {
+        // Locked
+    }
+
+    window.saveNewUserProfile = function() {
+        const fullname = document.getElementById('setup-fullname').value;
+        const centername = document.getElementById('setup-centername').value;
+        const address = document.getElementById('setup-address').value;
+        const mobile = document.getElementById('setup-mobile').value;
+        
+        if(!centername || !mobile) { alert("माहिती भरा."); return; }
+
+        const newData = { fullname, centername, address, mobile }; 
+        
+        const user = auth.currentUser;
+        if(user) {
+            db.collection('users').doc(user.uid).set(newData, {merge: true}) 
+            .then(() => {
+                userProfile = newData;
+                alert("सेव्ह झाले!");
+                showPage('home-page');
+            })
+            .catch((e) => { alert("Error: " + e.message); });
+        }
+    }
+
+    // --- FESTIVALS (SAN) ---
+    window.openAdminFestivalPage = function() {
+        showPage('admin-festival-page');
+        document.getElementById('fest-name').value = '';
+        document.getElementById('fest-file').value = '';
+        document.getElementById('fest-file-name').innerText = '';
+        document.getElementById('fest-desc').value = '';
+        document.getElementById('fest-s3-url').value = '';
+    }
+
+    window.saveFestival = function() {
+        const name = document.getElementById('fest-name').value;
+        const file = document.getElementById('fest-file').files[0];
+        const s3UrlInput = document.getElementById('fest-s3-url').value;
+        const desc = document.getElementById('fest-desc').value;
+
+        if(!name) { alert("सणाचे नाव आवश्यक आहे."); return; }
+
+        const finishSave = (url) => {
+             db.collection('festivals').add({ 
+                name: name,
+                image: url,
+                desc: desc,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+             }).then(() => {
+                 alert("सण यशस्वीरित्या ॲड झाला!");
+                 window.showPage('admin-panel');
+             }).catch(e => alert("Error: "+e.message));
+        };
+
+        if(s3UrlInput && s3UrlInput.trim() !== "") {
+            finishSave(s3UrlInput);
+        } else if(file) {
+            uploadToS3(file, (url) => finishSave(url));
+        } else {
+             alert("बॅनर निवडा किंवा URL टाका.");
+        }
+    }
+
+    window.openUserFestivalPage = function() {
+        showPage('user-festival-page');
+        const container = document.getElementById('festival-container');
+        container.innerHTML = 'Loading...';
+
+        db.collection('festivals').get().then((snap) => {
+             container.innerHTML = '';
+             if(snap.empty) { container.innerHTML = '<p style="text-align:center;">सण नाहीत.</p>'; return; }
+             snap.forEach(doc => {
+                const fest = doc.data();
+                const div = document.createElement('div');
+                div.className = 'banner-card';
+                div.innerHTML = `<div class="banner-header">${fest.name}</div><img src="${fest.image}" crossOrigin="Anonymous" onclick="window.openPreview('${fest.image}')"><div class="dwn-text" onclick="window.openPreview('${fest.image}')">DOWNLOAD</div>`;
+                container.appendChild(div);
+             });
+        });
+    }
+
+    // --- ADMIN SERVICES ---
+    window.openServiceEditNamePage = function() {
+        showPage('admin-edit-name-page');
+        const list = document.getElementById('admin-name-list');
+        list.innerHTML = '';
+        services.forEach((s, index) => {
+            const div = document.createElement('div');
+            div.className = 'admin-list-item';
+            div.innerHTML = `<div>${s.name}</div><button class="btn btn-primary btn-small" onclick="promptEditName(${index})">Edit</button>`;
+            list.appendChild(div);
+        });
+    }
+
+    window.promptEditName = function(index) {
+        const newName = prompt("नवीन नाव टाका:", services[index].name);
+        if(newName) {
+            services[index].name = newName;
+            localStorage.setItem('app_services_v2', JSON.stringify(services));
+            openServiceEditNamePage();
+        }
+    }
+
+    window.openServiceActivePage = function() {
+        showPage('admin-active-page');
+        const list = document.getElementById('admin-active-list');
+        list.innerHTML = '';
+        services.forEach((s, index) => {
+            const div = document.createElement('div');
+            div.className = 'admin-list-item';
+            div.innerHTML = `<div>${s.name}</div><label class="switch"><input type="checkbox" ${s.active ? 'checked' : ''} onchange="toggleServiceActive(${index})"><span class="slider"></span></label>`;
+            list.appendChild(div);
+        });
+    }
+
+    window.toggleServiceActive = function(index) {
+        services[index].active = !services[index].active;
+        localStorage.setItem('app_services_v2', JSON.stringify(services));
+    }
+
+    window.openServiceReorderPage = function() {
+        showPage('admin-reorder-page');
+        renderReorderList();
+    }
+
+    window.renderReorderList = function() {
+        const list = document.getElementById('admin-reorder-list');
+        list.innerHTML = '';
+        services.forEach((s, index) => {
+            const div = document.createElement('div');
+            div.className = 'admin-list-item';
+            div.innerHTML = `<div>${s.name}</div><div>${index > 0 ? `<button onclick="moveService(${index}, -1)">⬆️</button>` : ''}${index < services.length - 1 ? `<button onclick="moveService(${index}, 1)">⬇️</button>` : ''}</div>`;
+            list.appendChild(div);
+        });
+    }
+
+    window.moveService = function(index, direction) {
+        const temp = services[index];
+        services[index] = services[index + direction];
+        services[index + direction] = temp;
+        localStorage.setItem('app_services_v2', JSON.stringify(services));
+        renderReorderList();
+    }
+
+    // --- OTHER ADMIN FUNCTIONS ---
+    window.openAddSchemePage = function() {
+        const dropdown = document.getElementById('scheme-select-dropdown');
+        dropdown.innerHTML = '<option value="General">General (नवीन योजना)</option>';
+        services.forEach(s => {
+            if(s.active) {
+                const opt = document.createElement('option');
+                opt.value = s.name; opt.innerText = s.name; dropdown.appendChild(opt);
+            }
+        });
+        document.getElementById('new-scheme-file').value = '';
+        document.getElementById('file-name').innerText = '';
+        document.getElementById('scheme-desc').value = '';
+        document.getElementById('scheme-s3-url').value = '';
+        showPage('admin-add-scheme-page');
+    }
+
+    window.openLogoEditPage = function() {
+        const dropdown = document.getElementById('logo-service-dropdown');
+        dropdown.innerHTML = '<option value="">-- निवडा --</option>';
+        services.forEach(s => {
+            if(s.active) {
+                const opt = document.createElement('option');
+                opt.value = s.name; opt.innerText = s.name; dropdown.appendChild(opt);
+            }
+        });
+        document.getElementById('new-logo-file').value = '';
+        document.getElementById('logo-file-name').innerText = '';
+        document.getElementById('logo-s3-url').value = '';
+        showPage('admin-logo-edit-page');
+    }
+
+    window.previewFile = function(inputId, displayId) {
+        const file = document.getElementById(inputId).files[0];
+        if(file) document.getElementById(displayId).innerText = file.name;
+    }
+
+    window.saveServiceLogo = function() {
+        const sName = document.getElementById('logo-service-dropdown').value;
+        const file = document.getElementById('new-logo-file').files[0];
+        const s3Url = document.getElementById('logo-s3-url').value;
+
+        if(!sName) return alert("सेवा निवडा.");
+
+        const finishSave = (url) => {
+            const idx = services.findIndex(s => s.name === sName);
+            if(idx !== -1) {
+                services[idx].icon = url;
+                localStorage.setItem('app_services_v2', JSON.stringify(services));
+                alert("लोगो बदलला!"); renderServicesGrid(); showPage('admin-panel');
+            }
+        };
+
+        if (s3Url && s3Url.trim() !== "") {
+            finishSave(s3Url);
+        } else if (file) {
+            uploadToS3(file, (url) => finishSave(url));
+        } else {
+            alert("लोगो निवडा.");
+        }
+    }
+
+    window.saveCategorizedBanner = function() {
+        const cat = document.getElementById('scheme-select-dropdown').value;
+        const file = document.getElementById('new-scheme-file').files[0];
+        const s3Url = document.getElementById('scheme-s3-url').value;
+        const desc = document.getElementById('scheme-desc').value;
+
+        const saveToDB = (url) => {
+             db.collection('banners').add({
+                 image: url,
+                 category: cat,
+                 desc: desc,
+                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
+             }).then(() => {
+                 alert("Banner Saved!");
+                 showPage('admin-panel');
+             }).catch(e => alert("Error: "+e.message));
+        };
+
+        if (s3Url && s3Url.trim() !== "") {
+            saveToDB(s3Url);
+        } else if (file) {
+            uploadToS3(file, (url) => saveToDB(url));
+        } else {
+            alert("बॅनर निवडा किंवा URL टाका.");
+        }
+    }
+
+    // --- USER LIST & PROFILE ---
+    window.openAdminUserList = function() {
+        showPage('admin-user-list-page');
+        const container = document.getElementById('admin-users-container');
+        container.innerHTML = '<p style="text-align:center;">Loading...</p>';
+        
+        db.collection('users').get().then((querySnapshot) => {
+            allUsersData = [];
+            querySnapshot.forEach((doc) => { allUsersData.push({ uid: doc.id, ...doc.data() }); });
+            renderAdminUserList(allUsersData);
+        }).catch((error) => {
+            container.innerHTML = `<p style="text-align:center; color:red;">Error: ${error.message}</p>`;
+        });
+    }
+
+    window.renderAdminUserList = function(users) {
+        const container = document.getElementById('admin-users-container');
+        container.innerHTML = '';
+        if(users.length === 0) { container.innerHTML = '<p style="text-align:center;">No users.</p>'; return; }
+        users.forEach(user => {
+            const logo = user.logo ? `<img src="${user.logo}" />` : "👤";
+            const div = document.createElement('div');
+            div.className = 'user-list-card';
+            div.innerHTML = `<div class="user-info-left"><div class="user-avatar-small">${logo}</div><div class="user-details"><h4>${user.fullname||"User"}</h4><p>${user.mobile||""}</p></div></div><div class="user-actions"><span class="action-icon" onclick="openQuickLogoPage('${user.uid}')">🖼️</span><span class="action-icon" onclick="editUserByAdmin('${user.uid}')">✏️</span><span class="action-icon" onclick="deleteUser('${user.uid}')">🗑️</span></div>`;
+            container.appendChild(div);
+        });
+    }
+
+    window.filterUsers = function() {
+        const search = document.getElementById('user-search-input').value.toLowerCase();
+        const filtered = allUsersData.filter(u => (u.fullname && u.fullname.toLowerCase().includes(search)) || (u.mobile && u.mobile.toString().includes(search)));
+        renderAdminUserList(filtered);
+    }
+
+    window.editUserByAdmin = function(uid) {
+        const user = allUsersData.find(u => u.uid === uid);
+        if(!user) return;
+        document.getElementById('admin-edit-uid').value = uid;
+        document.getElementById('admin-edit-fullname').value = user.fullname || "";
+        document.getElementById('admin-edit-centername').value = user.centername || "";
+        document.getElementById('admin-edit-address').value = user.address || "";
+        document.getElementById('admin-edit-mobile').value = user.mobile || "";
+        const img = document.getElementById('admin-edit-user-preview');
+        if(user.logo) { img.src = user.logo; img.style.display = 'block'; } else { img.style.display = 'none'; }
+        showPage('admin-edit-user-page');
+    }
+
+    // NEW FUNCTION: Open Quick Logo Page
+    window.openQuickLogoPage = function(uid) {
+        document.getElementById('quick-logo-uid').value = uid;
+        document.getElementById('quick-logo-url').value = '';
+        showPage('admin-quick-logo-page');
+    }
+
+    // NEW FUNCTION: Save Quick Logo
+    window.saveQuickLogo = function() {
+        const uid = document.getElementById('quick-logo-uid').value;
+        const url = document.getElementById('quick-logo-url').value;
+        
+        if(!uid || !url) return alert("Please enter URL");
+
+        db.collection('users').doc(uid).update({ logo: url }).then(() => {
+            alert("Footer Image Updated!");
+            openAdminUserList();
+        }).catch(e => alert(e.message));
+    }
+
+    window.saveUserByAdmin = function() {
+        const uid = document.getElementById('admin-edit-uid').value;
+        const data = {
+            fullname: document.getElementById('admin-edit-fullname').value,
+            centername: document.getElementById('admin-edit-centername').value,
+            address: document.getElementById('admin-edit-address').value,
+            mobile: document.getElementById('admin-edit-mobile').value
+        };
+        db.collection('users').doc(uid).set(data, { merge: true }).then(() => {
+            alert("User updated!"); openAdminUserList();
+        });
+    }
+
+    window.deleteUser = function(uid) {
+        if(confirm("Delete User?")) {
+            db.collection('users').doc(uid).delete().then(() => {
+                alert("Deleted"); openAdminUserList();
+            });
+        }
+    }
+
+    window.populateEditProfile = function() {
+        document.getElementById('edit-fullname').value = userProfile.fullname || "";
+        document.getElementById('edit-centername').value = userProfile.centername || "";
+        document.getElementById('edit-address').value = userProfile.address || "";
+        document.getElementById('edit-mobile').value = userProfile.mobile || "";
+        if(userProfile.logo) {
+            const img = document.getElementById('edit-logo-preview');
+            img.src = userProfile.logo; img.style.display = 'block';
+            document.getElementById('edit-logo-placeholder').style.display = 'none';
+        }
+    }
+
+    window.previewEditLogo = function() {
+        // Locked
+    }
+
+    window.updateProfile = function() {
+        const img = document.getElementById('edit-logo-preview');
+        const s3Url = document.getElementById('edit-logo-s3-url').value;
+        const file = document.getElementById('edit-logo-input').files[0];
+
+        const finishUpdate = (url) => {
+            const updatedData = {
+                fullname: document.getElementById('edit-fullname').value,
+                centername: document.getElementById('edit-centername').value,
+                address: document.getElementById('edit-address').value,
+                mobile: document.getElementById('edit-mobile').value,
+                logo: url
+            };
+            const user = auth.currentUser;
+            if(user) {
+                db.collection('users').doc(user.uid).set(updatedData, { merge: true })
+                .then(() => {
+                    userProfile = updatedData;
+                    alert("प्रोफाइल सेव्ह झाली!");
+                    showPage('home-page');
+                })
+                .catch((error) => { alert("Error: " + error.message); });
+            }
+        };
+
+        let currentLogo = userProfile.logo || "";
+        if(s3Url && s3Url.trim() !== "") {
+            finishUpdate(s3Url);
+        } else if (file) {
+             compressImage(file, 0.7, (base64) => finishUpdate(base64));
+        } else {
+             if(img.style.display !== 'none' && img.src.startsWith('data:')) {
+                 finishUpdate(img.src);
+             } else {
+                 finishUpdate(currentLogo);
+             }
+        }
+    }
+
+    // --- USER HOME LOGIC ---
+    window.renderServicesGrid = function() {
+        const grid = document.getElementById('user-services-grid');
+        grid.innerHTML = '';
+        services.forEach(s => {
+            if(s.active) {
+                const div = document.createElement('div');
+                div.className = 'service-card';
+                let iconHtml = s.icon.startsWith('data:') || s.icon.startsWith('http') ? `<img src="${s.icon}" style="width:30px" />` : s.icon;
+                div.innerHTML = `<span class="service-icon">${iconHtml}</span><b>${s.name}</b>`;
+                div.onclick = () => openSchemeGallery(s.name);
+                grid.appendChild(div);
+            }
+        });
+    }
+
+    window.openSchemeGallery = function(cat) {
+        showPage('schemes-display-page');
+        const container = document.getElementById('banner-container');
+        document.getElementById('gallery-title').innerText = cat === 'General' ? "नवीन योजना" : cat;
+        container.innerHTML = 'Loading...';
+        
+        db.collection('banners').where('category', '==', cat).get().then((snap) => {
+            container.innerHTML = '';
+            if(snap.empty) { container.innerHTML = '<p style="text-align:center;">बॅनर नाही.</p>'; return; }
+            snap.forEach(doc => {
+                 const b = doc.data();
+                 const div = document.createElement('div');
+                 div.className = 'banner-card';
+                 div.innerHTML = `<div class="banner-header">${b.desc||b.category}</div><img src="${b.image}" crossOrigin="Anonymous" onclick="window.openPreview('${b.image}')"><div class="dwn-text" onclick="window.openPreview('${b.image}')">DOWNLOAD</div>`;
+                 container.appendChild(div);
+            });
+        });
+    }
+
+    // --- PREVIEW & DOWNLOAD ---
+    window.openPreview = function(imgSrc) {
+        if (!userProfile.centername) {
+            alert("कृपया आधी 'User' टॅबमध्ये जाऊन प्रोफाइल माहिती भरा.");
+            showPage('profile-page');
+            return;
+        }
+
+        document.getElementById('prev-banner-img').src = imgSrc;
+        
+        const footerImg = document.getElementById('prev-footer-img');
+        if (userProfile.logo) {
+            footerImg.src = userProfile.logo;
+            footerImg.style.display = 'block';
+        } else {
+            footerImg.style.display = 'none';
+        }
+
+        document.getElementById('confirm-download-btn').onclick = function() {
+             window.downloadBanner(imgSrc);
+        };
+
+        document.getElementById('preview-modal').classList.remove('hidden');
+    }
+
+    window.closePreview = function() {
+        document.getElementById('preview-modal').classList.add('hidden');
+    }
+
+    window.downloadBanner = function(imgSrc) {
+        // Show Loading Indicator
+        const loadingOverlay = document.getElementById('loading-overlay');
+        if(loadingOverlay) loadingOverlay.classList.remove('hidden');
+
+        const canvas = document.getElementById('downloadCanvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        img.crossOrigin = "Anonymous"; 
+        img.src = imgSrc;
+
+        img.onload = () => {
+            const w = 1080;
+            const scale = w / img.width;
+            const scaledBannerH = img.height * scale;
+
+            // DRAW FOOTER IMAGE IF EXISTS
+            if(userProfile.logo) {
+                const footer = new Image();
+                footer.crossOrigin = "Anonymous";
+                footer.src = userProfile.logo;
+                
+                footer.onload = () => {
+                    // DYNAMIC FOOTER HEIGHT based on Aspect Ratio
+                    const footerH = (footer.height / footer.width) * w;
+                    
+                    canvas.width = w;
+                    canvas.height = scaledBannerH + footerH;
+
+                    // Draw Banner
+                    ctx.drawImage(img, 0, 0, w, scaledBannerH);
+                    
+                    // Draw Footer
+                    ctx.drawImage(footer, 0, scaledBannerH, w, footerH);
+                    
+                    triggerSave();
+                };
+                
+                footer.onerror = () => {
+                    // Fallback
+                    canvas.width = w;
+                    canvas.height = scaledBannerH;
+                    ctx.drawImage(img, 0, 0, w, scaledBannerH);
+                    triggerSave();
+                }
+            } else {
+                canvas.width = w;
+                canvas.height = scaledBannerH;
+                ctx.drawImage(img, 0, 0, w, scaledBannerH);
+                triggerSave();
+            }
+        };
+
+        function triggerSave() {
+            const loadMsg = document.getElementById('loading-overlay');
+            if(loadMsg) loadMsg.classList.add('hidden');
+
+            const link = document.createElement('a');
+            link.download = `Sai_Banner_${Date.now()}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+    }
+
+    // Default Load
+    window.onload = () => {
+        showPage('login-page');
+    };
+</script>
+</body>
+</html>
