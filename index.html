@@ -78,8 +78,8 @@
             justify-content: center; 
         }
         .service-icon img { 
-            width: 100px; /* BIGGER LOGO */
-            height: 100px; /* BIGGER LOGO */
+            width: 100px; 
+            height: 100px; 
             object-fit: contain; 
         }
         
@@ -434,7 +434,8 @@
                     <img id="edit-logo-preview" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;">
                 </div>
                 <div style="text-align:center; font-weight:bold;">केंद्राचा लोगो</div>
-                <!-- TEXT REMOVED HERE AS REQUESTED -->
+                
+                <!-- REMOVED ADMIN TEXT HERE -->
 
                 <div class="input-group"><label>स्वत:चे नाव</label><input type="text" id="edit-fullname"></div>
                 <div class="input-group"><label>केंद्राचे नाव</label><input type="text" id="edit-centername"></div>
@@ -503,7 +504,8 @@
         { id: 16, name: "इतर सर्व कागद पात्र", icon: "📂", active: true }
     ];
 
-    let services = JSON.parse(localStorage.getItem('app_services_v2')) || defaultServices;
+    // UPDATED: Sync Services with Firestore
+    let services = []; // Will be populated from Firestore
     let savedBanners = JSON.parse(localStorage.getItem('app_banners_final')) || [];
     let savedFestivals = JSON.parse(localStorage.getItem('app_festivals')) || [];
     let allBanks = []; 
@@ -551,6 +553,8 @@
         if(btn) { btn.innerText = "लॉगिन करा"; btn.disabled = false; }
 
         if (user) {
+            // Load Services on Login
+            fetchServices();
             if(user.email === ADMIN_EMAIL) {
                 showPage('admin-panel');
             } else {
@@ -570,6 +574,25 @@
             showPage('login-page');
         }
     });
+
+    // --- FIRESTORE SERVICES LOGIC (NEW) ---
+    function fetchServices() {
+        db.collection('app_services').onSnapshot(snapshot => {
+            if(snapshot.empty) {
+                // Initial Seed
+                defaultServices.forEach((s, index) => {
+                   db.collection('app_services').doc(s.id.toString()).set(s);
+                });
+            } else {
+                services = [];
+                snapshot.forEach(doc => {
+                    services.push(doc.data());
+                });
+                services.sort((a,b) => a.id - b.id);
+                renderServicesGrid();
+            }
+        });
+    }
 
     window.doLogout = function() {
         if(confirm("बाहेर पडायचे आहे का?")) {
@@ -595,7 +618,7 @@
 
         if(!AWS.config.credentials) {
              const r = new FileReader();
-             r.onload = (e) => callback(e.target.result); 
+             r.onload = (e) => callback(e.target.result); // Fallback to Base64
              r.readAsDataURL(file);
              return;
         }
@@ -810,7 +833,7 @@
                  const div = document.createElement('div');
                  div.className = 'service-card';
                  div.innerHTML = `
-                    <span class="service-icon"><img src="${bank.logo}"></span>
+                    <span class="service-icon"><img src="${bank.logo}" style="width:100px; height:100px;"></span>
                     <b>${bank.name}</b>
                  `;
                  div.onclick = () => openSchemeGallery(bank.name); // Open banners tagged with Bank Name
@@ -818,6 +841,7 @@
             });
         });
     }
+
 
     // --- ADMIN SERVICES ---
     window.openServiceEditNamePage = function() {
@@ -836,7 +860,8 @@
         const newName = prompt("नवीन नाव टाका:", services[index].name);
         if(newName) {
             services[index].name = newName;
-            localStorage.setItem('app_services_v2', JSON.stringify(services));
+            // Update Firestore instead of LocalStorage
+            db.collection('app_services').doc(services[index].id.toString()).update({ name: newName });
             openServiceEditNamePage();
         }
     }
@@ -854,8 +879,9 @@
     }
 
     window.toggleServiceActive = function(index) {
-        services[index].active = !services[index].active;
-        localStorage.setItem('app_services_v2', JSON.stringify(services));
+        // Update Firestore
+        const newState = !services[index].active;
+        db.collection('app_services').doc(services[index].id.toString()).update({ active: newState });
     }
 
     window.openServiceReorderPage = function() {
@@ -875,11 +901,20 @@
     }
 
     window.moveService = function(index, direction) {
-        const temp = services[index];
-        services[index] = services[index + direction];
-        services[index + direction] = temp;
-        localStorage.setItem('app_services_v2', JSON.stringify(services));
-        renderReorderList();
+        // For simple swap, update IDs in Firestore? Or just swap local array then save?
+        // Simpler to just swap 'id' field in Firestore
+        // This is complex for basic Firestore. Let's keep local sort logic but update names.
+        // Or swap entire object content in Firestore.
+        // For now, let's just stick to name update to avoid complexity without changing structure.
+        // Actually, reordering requires rewriting 'id' or 'order' field.
+        // Let's assume ID is fixed. We swap contents.
+        
+        let s1 = services[index];
+        let s2 = services[index + direction];
+        
+        // Swap IDs in Firestore
+        db.collection('app_services').doc(s1.id.toString()).set(s2);
+        db.collection('app_services').doc(s2.id.toString()).set(s1);
     }
 
     // --- OTHER ADMIN FUNCTIONS (UPDATED ADD SCHEME TO HANDLE PRE-SELECTION) ---
@@ -946,11 +981,13 @@
         if(!sName) return alert("सेवा निवडा.");
 
         const finishSave = (url) => {
-            const idx = services.findIndex(s => s.name === sName);
-            if(idx !== -1) {
-                services[idx].icon = url;
-                localStorage.setItem('app_services_v2', JSON.stringify(services));
-                alert("लोगो बदलला!"); renderServicesGrid(); showPage('admin-panel');
+            const service = services.find(s => s.name === sName);
+            if(service) {
+                db.collection('app_services').doc(service.id.toString()).update({ icon: url })
+                .then(() => {
+                    alert("लोगो बदलला!"); 
+                    showPage('admin-panel');
+                });
             }
         };
 
