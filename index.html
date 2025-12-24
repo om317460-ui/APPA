@@ -265,12 +265,16 @@
     <div id="admin-panel" class="hidden page-layout">
         <div class="app-header">Edit Options <div class="user-logout-btn" onclick="doLogout()">बाहेर</div></div>
         <div class="content-scroll admin-content">
-            <button class="admin-btn-solid">➕ नवीन सेवा ऍड करा</button>
+            <!-- UPDATED: New Service Edit Button -->
+            <button class="admin-btn-solid" onclick="openServiceManagementPage()">🛠️ सेवा एडिट (Add/Remove)</button>
+            
             <button class="admin-btn-outline" onclick="openServiceEditNamePage()"><span class="admin-icon">✏️</span> आमच्या सेवा नेम Edit</button>
             <button class="admin-btn-outline" onclick="openLogoEditPage()"><span class="admin-icon">🖼️</span> लोगो एडिट</button>
             <button class="admin-btn-outline" onclick="openAddSchemePage()"><span class="admin-icon">📅</span> नवीन योजना बॅनर</button>
             <button class="admin-btn-outline" onclick="openServiceActivePage()"><span class="admin-icon">⭕</span> सर्विस ऍक्टिव्ह एन</button>
             <button class="admin-btn-outline" onclick="openServiceReorderPage()"><span class="admin-icon">⬇️</span> सर्विस क्रम नुसार</button>
+            <button class="admin-btn-outline" onclick="openAddSchemePage('Jobs')"><span class="admin-icon">📢</span> भरती / नोकरी बॅनर</button>
+            <button class="admin-btn-outline" onclick="openAddSchemePage()"><span class="admin-icon">📑</span> आत्ताच्या योजना ऍड</button>
             <button class="admin-btn-outline" onclick="openDeleteEditPage()"><span class="admin-icon">🗑️</span> फोटो डिलीट / एडिट</button>
         </div>
         <div class="bottom-nav admin-nav-bg"><div class="nav-item">Edit</div><div class="nav-item" onclick="openAdminUserList()">युजर</div><div class="nav-item" onclick="openAdminFestivalPage()">सण</div><div class="nav-item" onclick="openAdminBankCspPage()">बँक Csp</div></div>
@@ -282,6 +286,28 @@
     <div id="admin-reorder-page" class="hidden page-layout"><div class="app-header">सर्विस क्रम नुसार</div><div class="content-scroll" id="admin-reorder-list"></div><div class="bottom-nav admin-nav-bg"><div class="nav-item" onclick="showPage('admin-panel')">Back</div></div></div>
     <div id="admin-user-list-page" class="hidden page-layout"><div class="app-header">युजर ची यादी</div><div class="search-bar-container"><input type="text" id="user-search-input" class="search-input" placeholder="🔍 शोधा..." onkeyup="filterUsers()" /></div><div class="content-scroll user-list-container" id="admin-users-container"><p style="text-align:center;">Loading...</p></div><div class="bottom-nav admin-nav-bg"><div class="nav-item" onclick="showPage('admin-panel')">Edit</div><div class="nav-item" style="font-weight:bold;">युजर</div><div class="nav-item" onclick="openAdminFestivalPage()">सण</div><div class="nav-item" onclick="openAdminBankCspPage()">बँक Csp</div></div></div>
     
+    <!-- NEW: SERVICE MANAGEMENT PAGE (ADD/DELETE SERVICES) -->
+    <div id="admin-service-management-page" class="hidden page-layout">
+        <div class="app-header">सेवा एडिट (Add/Remove)</div>
+        <div class="content-scroll" style="padding:15px;">
+            <div class="scheme-form-card" style="margin-bottom:20px;">
+                <h4 style="margin:0 0 10px 0;">नवीन सेवा ॲड करा</h4>
+                <div class="input-group"><label>सेवेचे नाव</label><input type="text" id="new-service-name"></div>
+                <div class="input-group"><label>लोगो निवडा</label></div>
+                <div class="upload-box-dashed" onclick="document.getElementById('new-service-file').click()"><span class="plus-icon">➕</span></div>
+                <input type="file" id="new-service-file" accept="image/*" style="display: none;" onchange="previewFile('new-service-file', 'new-service-file-name')">
+                <p id="new-service-file-name" style="text-align:center; color:green; font-size:12px;"></p>
+                <div class="input-group"><label>किंवा URL</label><input type="text" id="new-service-url" placeholder="Paste URL"></div>
+                <button class="btn btn-primary" onclick="addNewService()">Add Service ✅</button>
+            </div>
+            
+            <hr>
+            <h4 style="text-align:center; margin-top:20px;">उपलब्ध सेवा (Delete)</h4>
+            <div id="admin-service-mgmt-list">Loading...</div>
+        </div>
+        <div class="bottom-nav admin-nav-bg"><div class="nav-item" onclick="showPage('admin-panel')">Back</div></div>
+    </div>
+
     <!-- ADMIN EDIT USER PAGE -->
     <div id="admin-edit-user-page" class="hidden page-layout">
         <div class="app-header">युजर एडिट करा</div>
@@ -390,7 +416,7 @@
             <div style="background: linear-gradient(to right, #e67e22, #f39c12); color: white; margin: 15px; padding: 8px; text-align: center; font-weight: bold; border-radius: 50px;">आमच्या सर्व सेवा</div>
             <div class="services-grid" id="user-services-grid"></div>
         </div>
-        <div class="bottom-nav"><div class="nav-item active" onclick="showPage('home-page')">🏠<br />होम</div><div class="nav-item" onclick="openUserFestivalPage()">🎉<br />सन</div><div class="nav-item" onclick="openUserBankCspPage()">🏦<br />बँक CSP</div><div class="nav-item" onclick="showPage('profile-page')">👤<br />User</div></div>
+        <div class="bottom-nav"><div class="nav-item active" onclick="showPage('home-page')">🏠<br />होम</div><div class="nav-item" onclick="openUserFestivalPage()">🎉<br />सन</div><div class="nav-item" onclick="openUserOtherPage()">🏦<br />इतर</div><div class="nav-item" onclick="showPage('profile-page')">👤<br />User</div></div>
     </div>
 
     <!-- 7. USER SCHEME DISPLAY -->
@@ -401,7 +427,7 @@
             <div id="banner-container"></div>
             <button class="btn btn-premium" onclick="showPage('home-page')" style="width:90%; margin:10px auto; display:block;">मागे जा (Back)</button>
         </div>
-        <div class="bottom-nav"><div class="nav-item active" onclick="showPage('home-page')">🏠<br />होम</div><div class="nav-item" onclick="openUserFestivalPage()">🎉<br />सन</div><div class="nav-item" onclick="openUserBankCspPage()">🏦<br />बँक CSP</div><div class="nav-item" onclick="showPage('profile-page')">👤<br />User</div></div>
+        <div class="bottom-nav"><div class="nav-item active" onclick="showPage('home-page')">🏠<br />होम</div><div class="nav-item" onclick="openUserFestivalPage()">🎉<br />सन</div><div class="nav-item" onclick="openUserOtherPage()">🏦<br />इतर</div><div class="nav-item" onclick="showPage('profile-page')">👤<br />User</div></div>
     </div>
 
     <!-- 7.1 USER FESTIVAL PAGE -->
@@ -410,16 +436,26 @@
         <div class="content-scroll">
             <div id="festival-container" style="padding: 15px;"></div>
         </div>
-        <div class="bottom-nav"><div class="nav-item" onclick="showPage('home-page')">🏠<br />होम</div><div class="nav-item active">🎉<br />सन</div><div class="nav-item" onclick="openUserBankCspPage()">🏦<br />बँक CSP</div><div class="nav-item" onclick="showPage('profile-page')">👤<br />User</div></div>
+        <div class="bottom-nav"><div class="nav-item" onclick="showPage('home-page')">🏠<br />होम</div><div class="nav-item active">🎉<br />सन</div><div class="nav-item" onclick="openUserOtherPage()">🏦<br />इतर</div><div class="nav-item" onclick="showPage('profile-page')">👤<br />User</div></div>
     </div>
     
-    <!-- 7.2 USER BANK CSP PAGE -->
+    <!-- 7.2 USER OTHER MENU PAGE -->
+    <div id="user-other-menu-page" class="hidden page-layout">
+        <div class="app-header">इतर</div>
+        <div class="content-scroll" style="display:flex; flex-direction:column; gap:20px; padding:20px; align-items:center;">
+             <div class="big-option-btn" style="width:100%;" onclick="openUserBankCspPage()"><span>🏦 बँक CSP</span><span>▶</span></div>
+             <div class="big-option-btn" style="width:100%;" onclick="openSchemeGallery('Jobs')"><span>📢 भरती / नोकरी</span><span>▶</span></div>
+        </div>
+        <div class="bottom-nav"><div class="nav-item" onclick="showPage('home-page')">🏠<br />होम</div><div class="nav-item" onclick="openUserFestivalPage()">🎉<br />सन</div><div class="nav-item active" onclick="openUserOtherPage()">🏦<br />इतर</div><div class="nav-item" onclick="showPage('profile-page')">👤<br />User</div></div>
+    </div>
+    
+    <!-- 7.3 USER BANK CSP PAGE -->
     <div id="user-bank-csp-page" class="hidden page-layout">
         <div class="app-header">बँक CSP</div>
         <div class="content-scroll">
              <div class="services-grid" id="user-bank-grid" style="padding:15px;"></div>
         </div>
-        <div class="bottom-nav"><div class="nav-item" onclick="showPage('home-page')">🏠<br />होम</div><div class="nav-item" onclick="openUserFestivalPage()">🎉<br />सन</div><div class="nav-item active">🏦<br />बँक CSP</div><div class="nav-item" onclick="showPage('profile-page')">👤<br />User</div></div>
+        <div class="bottom-nav"><div class="nav-item" onclick="showPage('home-page')">🏠<br />होम</div><div class="nav-item" onclick="openUserFestivalPage()">🎉<br />सन</div><div class="nav-item active" onclick="openUserOtherPage()">🏦<br />इतर</div><div class="nav-item" onclick="showPage('profile-page')">👤<br />User</div></div>
     </div>
 
     <!-- 8. USER PROFILE (User Tab) -->
@@ -434,22 +470,21 @@
                     <img id="edit-logo-preview" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;">
                 </div>
                 <div style="text-align:center; font-weight:bold;">केंद्राचा लोगो</div>
-                
-                <!-- REMOVED ADMIN TEXT HERE -->
+                <!-- TEXT REMOVED -->
 
                 <div class="input-group"><label>स्वत:चे नाव</label><input type="text" id="edit-fullname"></div>
                 <div class="input-group"><label>केंद्राचे नाव</label><input type="text" id="edit-centername"></div>
                 <div class="input-group"><label>संपूर्ण पत्ता</label><input type="text" id="edit-address"></div>
                 <div class="input-group"><label>मोबाईल क्रमांक</label><input type="number" id="edit-mobile"></div>
                 
-                <button class="btn btn-premium">प्रीमियम घ्या (Get Premium)</button>
+                <!-- PREMIUM BUTTON REMOVED -->
                 <button class="btn btn-primary" onclick="updateProfile()">सेव्ह करा</button>
             </div>
         </div>
         <div class="bottom-nav">
             <div class="nav-item" onclick="showPage('home-page')">🏠<br />होम</div>
             <div class="nav-item" onclick="openUserFestivalPage()">🎉<br />सन</div>
-            <div class="nav-item" onclick="openUserBankCspPage()">🏦<br />बँक CSP</div>
+            <div class="nav-item" onclick="openUserOtherPage()">🏦<br />इतर</div>
             <div class="nav-item active">👤<br />User</div>
         </div>
     </div>
@@ -738,6 +773,11 @@
         });
     }
 
+    // --- NEW: USER OTHER MENU PAGE ---
+    window.openUserOtherPage = function() {
+        showPage('user-other-menu-page');
+    }
+
     // --- BANK CSP FUNCTIONS (UPDATED - UPLOAD BANNER) ---
     
     // Admin: Open Bank CSP Page
@@ -833,7 +873,7 @@
                  const div = document.createElement('div');
                  div.className = 'service-card';
                  div.innerHTML = `
-                    <span class="service-icon"><img src="${bank.logo}" style="width:100px; height:100px;"></span>
+                    <span class="service-icon"><img src="${bank.logo}"></span>
                     <b>${bank.name}</b>
                  `;
                  div.onclick = () => openSchemeGallery(bank.name); // Open banners tagged with Bank Name
@@ -842,8 +882,91 @@
         });
     }
 
+    // --- NEW: SERVICE MANAGEMENT PAGE LOGIC (ADD/DELETE SERVICES) ---
+    window.openServiceManagementPage = function() {
+        showPage('admin-service-management-page');
+        loadServicesForManagement();
+    }
 
-    // --- ADMIN SERVICES ---
+    window.loadServicesForManagement = function() {
+        const listContainer = document.getElementById('admin-service-mgmt-list');
+        listContainer.innerHTML = '<p style="text-align:center;">Loading Services...</p>';
+
+        // Use the global 'services' array which is synced with Firestore
+        if (services.length === 0) {
+             listContainer.innerHTML = '<p style="text-align:center;">No services found.</p>';
+             return;
+        }
+
+        let html = '';
+        services.forEach((s) => {
+            html += `
+                <div class="admin-list-item" style="flex-direction:row; align-items:center; justify-content:space-between;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <img src="${s.icon}" style="width:40px; height:40px; object-fit:contain;">
+                        <span>${s.name}</span>
+                    </div>
+                    <button class="btn btn-danger btn-small" onclick="deleteService('${s.id}')">Delete 🗑️</button>
+                </div>
+            `;
+        });
+        listContainer.innerHTML = html;
+    }
+
+    window.addNewService = function() {
+        const name = document.getElementById('new-service-name').value;
+        const file = document.getElementById('new-service-file').files[0];
+        const url = document.getElementById('new-service-url').value;
+
+        if (!name) return alert("Please enter service name");
+        if (!file && !url) return alert("Please provide an icon (File or URL)");
+
+        const saveToFirestore = (iconUrl) => {
+            const newId = Date.now(); // Use timestamp as unique ID
+            const newService = {
+                id: newId,
+                name: name,
+                icon: iconUrl,
+                active: true
+            };
+
+            db.collection('app_services').doc(newId.toString()).set(newService)
+            .then(() => {
+                alert("Service Added!");
+                // Clear inputs
+                document.getElementById('new-service-name').value = '';
+                document.getElementById('new-service-file').value = '';
+                document.getElementById('new-service-file-name').innerText = '';
+                document.getElementById('new-service-url').value = '';
+                // Reload list handled by snapshot listener automatically, but force refresh UI for admin view
+                loadServicesForManagement();
+            })
+            .catch(e => alert("Error: " + e.message));
+        };
+
+        if (url) {
+            saveToFirestore(url);
+        } else {
+            uploadToS3(file, (uploadedUrl) => {
+                if(uploadedUrl) saveToFirestore(uploadedUrl);
+                else alert("Image upload failed");
+            });
+        }
+    }
+
+    window.deleteService = function(id) {
+        if(confirm("Delete this service permanently?")) {
+            db.collection('app_services').doc(id.toString()).delete()
+            .then(() => {
+                alert("Service Deleted!");
+                loadServicesForManagement();
+            })
+            .catch(e => alert("Error: " + e.message));
+        }
+    }
+
+
+    // --- ADMIN SERVICES (OLD) ---
     window.openServiceEditNamePage = function() {
         showPage('admin-edit-name-page');
         const list = document.getElementById('admin-name-list');
@@ -860,8 +983,7 @@
         const newName = prompt("नवीन नाव टाका:", services[index].name);
         if(newName) {
             services[index].name = newName;
-            // Update Firestore instead of LocalStorage
-            db.collection('app_services').doc(services[index].id.toString()).update({ name: newName });
+            localStorage.setItem('app_services_v2', JSON.stringify(services));
             openServiceEditNamePage();
         }
     }
@@ -918,7 +1040,7 @@
     }
 
     // --- OTHER ADMIN FUNCTIONS (UPDATED ADD SCHEME TO HANDLE PRE-SELECTION) ---
-    window.openAddSchemePage = function(preSelectedBank = null) {
+    window.openAddSchemePage = function(preSelectedCategory = null) {
         const dropdown = document.getElementById('scheme-select-dropdown');
         dropdown.innerHTML = '<option value="General">General (नवीन योजना)</option>';
         
@@ -930,6 +1052,11 @@
             }
         });
 
+        // Add 'Jobs' Option manually to dropdown
+        const jobsOpt = document.createElement('option');
+        jobsOpt.value = 'Jobs'; jobsOpt.innerText = 'भरती / नोकरी (Jobs)';
+        dropdown.appendChild(jobsOpt);
+
         // Add Banks Dynamically from Firestore & Handle Pre-selection
         db.collection('bank_csp').get().then((snap) => {
              snap.forEach(doc => {
@@ -940,9 +1067,9 @@
                  dropdown.appendChild(opt);
              });
              
-             // If a bank name was passed, select it
-             if(preSelectedBank) {
-                 dropdown.value = preSelectedBank;
+             // If a specific category (Bank or Jobs) was passed, select it
+             if(preSelectedCategory) {
+                 dropdown.value = preSelectedCategory;
              }
         });
 
@@ -1227,6 +1354,12 @@
         showPage('schemes-display-page');
         const container = document.getElementById('banner-container');
         document.getElementById('gallery-title').innerText = cat === 'General' ? "नवीन योजना" : cat;
+        
+        // Custom Title Handling for "Jobs"
+        if(cat === 'Jobs') {
+            document.getElementById('gallery-title').innerText = "भरती / नोकरी";
+        }
+        
         container.innerHTML = 'Loading...';
         
         db.collection('banners').where('category', '==', cat).get().then((snap) => {
